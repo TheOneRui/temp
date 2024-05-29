@@ -46,7 +46,7 @@ module MandelbrotSet_tb;
     initial begin
         // Initialize inputs
         reset = 1'b1;
-        #40; // Assert reset for a short period
+        #100; // Assert reset for a short period
         reset = 1'b0;
 
         // Monitor output for a specific duration to observe behavior

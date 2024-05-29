@@ -13,7 +13,7 @@ module ClockDivider(
 endmodule
 
 module MandelbrotSet(
-    input wire clk,     // 25 MHz
+    input wire clk,     // 50 MHz
     input wire reset,	// Active high
 
     output wire VGA_HS,	// HSYNC (to VGA connector)
@@ -28,20 +28,7 @@ module MandelbrotSet(
 
 	 parameter H_ACTIVE	= 64;// Active video horizontal length
 	 parameter V_ACTIVE	= 48;// Active video vertical height
-
-	 wire	clk_25Mhz;
-	 ClockDivider	div(
-		.clk_in(clk),
-		.clk_out(clk_25Mhz)
-	 );
-		
-	wire [31:0] real_part, imaginary_part;
-
-	wire cntrl_address;
-	wire r_cntrl_fifo, empty_wire;
-	wire full_real_wire, full_imag_wire;
-
-	wire [31:0] color_val;
+	 
 	reg [$clog2(H_ACTIVE)-1:0] counter_H;
 	reg [$clog2(V_ACTIVE)-1:0] counter_V;
 
@@ -50,38 +37,71 @@ module MandelbrotSet(
 	reg	[8:0]	display_pointer;
 	 
 
-	assign cntrl_address = clk_25Mhz && (!full_real_wire && !full_imag_wire); 
+	 wire	clk_25Mhz;
+	 ClockDivider	div(
+		.clk_in(clk),
+		.clk_out(clk_25Mhz)
+	 );
+	 
+	 
+	 
+	 
+
 //	//	AddressMapper
-
-
-
 	AddressMapper	#(
 		.MAX_X 		(H_ACTIVE),
 		.MAX_Y 		(V_ACTIVE)
 	)	addmap(
-		.clk			(cntrl_address),
+		.clk			(address_clk),
 		.rst			(reset),
 		.mapped_x	(real_part),
 		.mapped_y	(imaginary_part)
 	);
 	
-//	//	PIPE
-	Pipe	pipe(
-		.clk(clk_25Mhz),
-		.rst(reset),
-		.w_cntrl_real(!full_real_wire),
-		.w_cntrl_imag(!full_imag_wire),
-		.r_cntrl(r_cntrl_fifo),
-		.data_in_real(real_part),
-		.data_in_imag(imaginary_part),
-		
-		.data_out(color_val),
-		.full_real(full_real_wire), 
-		.full_imag(full_imag_wire), 
-		.empty(empty_wire) 
+	//address mapper Wires/Connectivity
+	//==========================================
+	//output wires
+	wire [31:0] real_part, imaginary_part;
+
+	//control wire for address mapper
+	wire address_clk;
+	assign address_clk = (clk_25Mhz & calc_rdy);
+	//==========================================
+	//address mapper Wires/Connectivity
+	
+	
+	
+	
+//	//	Calc
+	MandelbrotCalculator calc(
+		 .clk						(calc_clk),
+		 .rst						(reset),
+		 .real_part				(real_part),
+		 .imaginary_part		(imaginary_part),
+		 .start					(calc_start), 
+		 .out_ready				(calc_out_rdy),
+		 .colour_data			(calc_result),
+		 .ready_for_input		(calc_rdy)
 	);
 	
-	assign r_cntrl_fifo = !empty_wire;
+	//Calculator Wires/Connectivity
+	//==========================================
+	//control wires
+	wire calc_rdy, calc_start, calc_out_rdy, calc_clk;
+	assign calc_clk = clk_25Mhz; //may need to add cntrl/timing logic here
+	
+	//output wires
+	wire [31:0] calc_result;
+	
+	
+	//==========================================
+	//Calculator Wires/Connectivity
+	
+	
+	
+	
+	
+
 	
 	 // Instantiate VGADriver                   
 	 VGADriver	driver( 
@@ -103,6 +123,9 @@ module MandelbrotSet(
 		.vga_blue(VGA_B)
 	 );
 
+	 
+	 //CONTROL LOGIC
+	 //===================================================
 	integer i, j;
 	always @(posedge clk) begin
 		if (reset) begin
@@ -115,7 +138,7 @@ module MandelbrotSet(
 			counter_H <= 0;
 			counter_V <= 0;
 		end
-		
+
 		else	begin
 			for (i = 0; i < H_ACTIVE; i = i + 1) begin
 				for (j = 0; j < V_ACTIVE; j = j + 1) begin
@@ -124,12 +147,17 @@ module MandelbrotSet(
 				end
 			end
 		end
-		
-		if(r_cntrl_fifo) begin
-			display_buffer[counter_H][counter_V]	=	color_val;
-			$display("CHECK THIS HOMIE (color_val) = %d", color_val);
+	end
+	 
+	 
+	 
+	 
+	always @(posedge clk) begin
+		if(calc_out_rdy) begin
+			display_buffer[counter_H][counter_V]	=	calc_result;
+			$display("CHECK THIS HOMIE (calc_result) = %d", calc_result);
 			
-			if	(color_val)	begin
+			if	(calc_result)	begin
 				$finish;
 			end
 			
@@ -141,5 +169,8 @@ module MandelbrotSet(
 			end
 		end
 	end
+	 
+	 //===================================================
+	 //CONTROL LOGIC
 
 endmodule
