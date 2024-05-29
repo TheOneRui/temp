@@ -165,8 +165,7 @@ module MandelbrotSet(
 			i <= 0;
 			j <= 0;
 		end else	begin
-		
-			display_pointer <=	display_buffer[i][j];
+			display_pointer =	display_buffer[i][j];
 			$display("CHECK THIS HOMIE (display_pointer) = %d", display_pointer);
 			
 			if(i < H_ACTIVE - 1) begin
@@ -185,10 +184,10 @@ module MandelbrotSet(
 			$display("CHECK THIS HOMIE (calc_result) = %d", calc_result);
 			
 			if(counter_H < H_ACTIVE-1) begin
-				counter_H <=	counter_H + 1;
+				counter_H =	counter_H + 1;
 			end else if (counter_V < V_ACTIVE-1) begin
-				counter_H <=	counter_H + 1;
-				counter_V <=	counter_V + 1;
+				counter_H =	counter_H + 1;
+				counter_V =	counter_V + 1;
 			end else begin
 				complete <= 1;
 			end
