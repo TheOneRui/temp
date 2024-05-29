@@ -149,7 +149,7 @@ module MandelbrotSet(
 	 
 	 
 	 
-	integer i, j, vert, hor;
+	integer i, j;
 	always @(posedge clk_25Mhz) begin
 		if (reset) begin
 			complete <= 0;
@@ -164,26 +164,20 @@ module MandelbrotSet(
 			counter_V <= 0;
 			i <= 0;
 			j <= 0;
-			vert <= 0;
-			hor <= 0;
 		end else	begin
-			if (hor == 0) begin
-				if(i < H_ACTIVE - 1) begin
-					i <=	i + 1;
-				end else if (j < V_ACTIVE - 1) begin
-					i <=	0;
-					j <=	j + 1;
-				end else begin
-					i <= 0;
-					j <= 0;
-				end
-				hor <= 19;
-			end else begin
-				hor <= hor-1;
-			end
-			
+		
 			display_pointer <=	display_buffer[i][j];
 			$display("CHECK THIS HOMIE (display_pointer) = %d", display_pointer);
+			
+			if(i < H_ACTIVE - 1) begin
+				i =	i + 1;
+			end else if (j < V_ACTIVE - 1) begin
+				i =	0;
+				j =	j + 1;
+			end else begin
+				i = 0;
+				j = 0;
+			end
 		end
 		
 		if(calc_out_rdy) begin
