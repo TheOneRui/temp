@@ -1,0 +1,91 @@
+/*
+ * FiFo
+ * ----------------
+ * By: Rui van de Ven
+ * For: Group 33, ELEC5566M
+ * Date: 27/04/2024
+ *
+ * Description
+ * -----------
+ * The module is used as a storage connection between the VGA and the Workers
+ * Two pointers, write_ptr, which points to the first empty slot
+ * read_ptr, which points to the first full row of data
+ *
+ * The module can store N number of rows, which is N number of data values
+ * of BIT_WIDTH in width. the default is 32, per the mandelbrot accuracy 
+ * of the calculation group 33 has chosen.
+ * 
+ */
+ 
+ module FiFo #(
+    //parameters
+	 parameter N = 16,
+	 parameter BIT_WIDTH = 32
+)(
+    //Declare input and output ports
+	 input clk,
+	 input rst,
+	 input w_cntrl,
+	 input r_cntrl,
+	 input [BIT_WIDTH-1:0] data_in,
+	 output reg [BIT_WIDTH-1:0] data_out,
+	 output full,
+	 output empty
+);
+
+	//create the actual FIFO register bank, of BIT_WIDTH by N rows
+	reg [BIT_WIDTH-1:0] fifo[16];
+
+	//pointers to allow for reading and writing logic
+	//each are log2 of the N number of rows
+	reg [$clog2(N)-1:0] write_ptr;
+	reg [$clog2(N)-1:0] read_ptr;
+
+	//A counter to keep track of the number of data rows full
+	reg [$clog2(N)-1:0] count;
+
+	//Reset Logic, when rst goes HIGH (=1)
+	//Active High Reset (per VGADriver and MandelBrotSet.v)
+	always @(posedge clk) begin
+		if(rst) begin //initiliaze all registers and pointers to 0
+			write_ptr<= 0;
+			read_ptr <= 0;
+			data_out <= 0;
+			count 	<= 0;
+		end else begin
+			case({w_cntrl,r_cntrl}) //check the control flags then set count appropriately
+				2'b00: count <= count; //no read or write
+				2'b11: count <= count; //read and write so no change to total count
+				2'b01: count <= count - 1'b1; //read - 1 to count
+				2'b10: count <= count + 1'b1; //write + 1 to count
+			endcase
+			//Synchronous Read
+			synch_read();
+			//Synchronous Write
+			synch_write();
+		end
+	end
+	
+	//Assign Full and Empty flags
+	assign full 	= (count == 4'b1111);
+	assign empty 	= (count == 0);
+	
+	//Synchronous read
+	task synch_read; begin
+			if(r_cntrl & !empty) begin //check if read enabled and not empty
+				data_out <= fifo[read_ptr]; //pass fifo data to data out
+				read_ptr <= read_ptr + 1; //shif read_ptr to next data row
+			end
+		end
+	endtask
+	
+	//Synchronous write
+	task synch_write; begin
+			if(w_cntrl & !full) begin //check if write enabled and not full
+				fifo[write_ptr] <= data_in; //store data in
+				write_ptr <= write_ptr + 1; // shift write_ptr
+			end
+		end
+	endtask
+	
+endmodule

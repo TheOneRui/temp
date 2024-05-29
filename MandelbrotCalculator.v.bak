@@ -1,0 +1,95 @@
+module MandelbrotCalculator #(
+    parameter BIT_WIDTH = 32,
+    parameter MAX_ITERATIONS = 300,
+	 parameter FLOAT_PRECISION = 26
+)(
+    input wire clk,
+    input wire rst,
+    input signed [BIT_WIDTH-1:0] real_part, 
+    input signed [BIT_WIDTH-1:0] imaginary_part,
+    input wire fifo_out_ready,
+    input wire fifo_real_part_ready,
+    input wire fifo_imaginary_part_ready,
+    output reg out_ready,
+    output reg [BIT_WIDTH-1:0] colour_data,  
+    output reg ready_for_input
+);
+
+
+	
+    reg [BIT_WIDTH-1:0] a, b, counter, a_sqr, b_sqr, b_sqr_neg, ab, ab_times_two, a_sqr_minus_b_sqr, a_sqr_plus_b_sqr, a_sqr_minus_b_sqr_plus_real, ab_times_two_plus_imag;
+    reg [2*BIT_WIDTH-1:0] f_result; 
+    reg [BIT_WIDTH-1:0] q_result; // Output already in quantized format
+	 
+    reg [BIT_WIDTH-1:0] a_2cmp, b_2cmp;
+    reg [BIT_WIDTH-1:0] multiplicand, multiplier;
+    reg [BIT_WIDTH-2:0] quantized_result, quantized_result_2cmp;
+	 
+always @(posedge clk) begin
+    if (rst) begin
+	     a <= 0;
+		  b <= 0;
+		  counter <= 0;
+	 end else begin
+	     a_sqr = qmult(a,a);
+		  b_sqr = qmult(b,b);
+		  ab = qmult(a,b);
+		  ab_times_two = qmult(2, ab);
+		  b_sqr_neg = {b_sqr[BIT_WIDTH-1], {(BIT_WIDTH-1){1'b1}} - b_sqr[BIT_WIDTH-2:0] + 1'b1};
+		  a_sqr_minus_b_sqr = qadd(a_sqr, b_sqr_neg);
+		  a_sqr_minus_b_sqr_plus_real = qadd(a_sqr_minus_b_sqr, real_part);
+		  a_sqr_plus_b_sqr = qadd(a_sqr, b_sqr);
+		  ab_times_two_plus_imag = qadd(ab_times_two, imaginary_part);
+		  
+		  if (a_sqr_plus_b_sqr > 4  || counter > MAX_ITERATIONS) begin
+		      //computate colour
+				out_ready <= 1;
+				ready_for_input <= 1;
+		  end
+		  
+	 end
+end
+	 
+	 
+function [BIT_WIDTH-1:0] qadd (
+    input [BIT_WIDTH-1:0] a,
+    input [BIT_WIDTH-1:0] b
+);
+begin
+
+   // Q format addition
+   qadd = a + b; 
+end
+endfunction
+
+
+function [BIT_WIDTH-1:0] qmult (
+    input [BIT_WIDTH-1:0] a,
+    input [BIT_WIDTH-1:0] b
+);
+begin
+
+
+
+    // 2's complement calculations
+     a_2cmp = {a[BIT_WIDTH-1], {(BIT_WIDTH-1){1'b1}} - a[BIT_WIDTH-2:0] + 1'b1};
+     b_2cmp = {b[BIT_WIDTH-1], {(BIT_WIDTH-1){1'b1}} - b[BIT_WIDTH-2:0] + 1'b1};
+
+    // Determine multiplicand and multiplier (handling negative values)
+     multiplicand = (a[BIT_WIDTH-1]) ? a_2cmp : a;   
+     multiplier  = (b[BIT_WIDTH-1]) ? b_2cmp : b;   
+
+    // Multiplication (sign bits excluded)       
+     f_result = multiplicand[BIT_WIDTH-2:0] * multiplier[BIT_WIDTH-2:0]; 
+
+    // Quantization and sign handling
+     quantized_result = f_result[BIT_WIDTH-2+FLOAT_PRECISION:FLOAT_PRECISION];  
+     quantized_result_2cmp = {(BIT_WIDTH-1){1'b1}} - quantized_result[BIT_WIDTH-2:0] + 1'b1; 
+     q_result = (f_result[2*BIT_WIDTH-2]) ? quantized_result_2cmp : quantized_result; // Sign based on f_result
+
+    // Implicitly return the quantized result
+    qmult = q_result; 
+end
+endfunction
+
+endmodule

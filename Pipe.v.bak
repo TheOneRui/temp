@@ -1,0 +1,38 @@
+/*
+ * Pipeline (Calc plus required FiFo's)
+ * ----------------
+ * By: Rui van de Ven
+ * For: Group 33, ELEC5566M
+ * Date: 30/04/2024
+ *
+ * Description
+ * -----------
+ * This module is the combination of the Calculator modules
+ * and the required FiFo's to enable synchronous operation
+ * there are 2 FiFo's handling providing input values
+ * 1 FiFo handles the output of the Calc Module
+ * may need to be expanded to have an extra FiFo, which stores the address values
+ * an Idea for adding paralisation.
+ * 
+ */
+ 
+  module Pipe #(
+    //parameters
+	 parameter N = 16,
+	 parameter BIT_WIDTH = 32,
+	 parameter MAX_ITERATIONS = 300,
+	 parameter FLOAT_PRECISION = 26
+)(
+    //Declare input and output ports
+	 input clk,
+	 input rst,
+	 input w_cntrl_real,
+	 input w_cntrl_imag,
+	 input r_cntrl,
+	 input [BIT_WIDTH-1:0] data_in_real,
+	 input [BIT_WIDTH-1:0] data_in_imag,
+	 output reg [BIT_WIDTH-1:0] data_out,
+	 output full_real,
+	 output full_imag,
+	 output empty
+);

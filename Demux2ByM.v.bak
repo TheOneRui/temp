@@ -1,0 +1,25 @@
+/*
+ * DMux
+ * ----------------
+ * By: Rui van de Ven
+ * For: Group 33, ELEC5566M
+ * Date: 28/04/2024
+ *
+ * Description
+ * -----------
+ * part of the Calculation Pipeline, will be used to enable Paralizing the Calc modules
+ * 
+ */
+ 
+ module Demux2ByM #(
+    //parameters
+	 parameter N = 2, //number of outputs
+	 parameter M = 32 //Bit Width
+)(
+    //Declare input and output ports
+	 input clk,
+	 input sel,
+	 input [M-1:0]input,
+	 output reg [M-1:0] out0,
+	 output reg [M-1:0] out1
+);

@@ -1,0 +1,63 @@
+module FiFo_tb;
+	parameter BIT_WIDTH = 32;
+	  
+	reg clk, rst;
+	reg w_cntrl, r_cntrl;
+	reg [BIT_WIDTH-1:0] data_in;
+	wire [BIT_WIDTH-1:0] data_out;
+	wire full, empty;
+
+	// Queue to push data_in
+	reg [BIT_WIDTH-1:0] storage[$], compare_var;
+
+	FiFo DUT(clk, rst, w_cntrl, r_cntrl, data_in, data_out, full, empty);
+
+	always #10ns clk = ~clk;
+
+	initial begin
+		clk = 1'b0; 
+		rst = 1'b1;
+		w_cntrl = 1'b0;
+		data_in = 0;
+		 
+		for (int i=0; i<10; i++) begin //wait 10 clock cycles
+			@(posedge clk); 
+		end
+		rst = 1'b0;
+
+		for (int i=0; i<30; i++) begin //load the FiFO with random data
+			@(posedge clk);
+			w_cntrl = (i%2 == 0)? 1'b1 : 1'b0;
+			if (w_cntrl & !full) begin
+				data_in = $urandom;
+				storage.push_back(data_in);
+			end
+		end
+		#100;
+	end
+
+	initial begin
+		clk = 1'b0; 
+		rst = 1'b1;
+		r_cntrl = 1'b0;
+
+		for (int i=0; i<20; i++) begin //wait 20 clock cycles
+			@(posedge clk); 
+		end
+		rst = 1'b0;
+
+		for (int i=0; i<30; i++) begin
+			@(posedge clk);
+			r_cntrl = (i%2 == 0)? 1'b1 : 1'b0;
+			if (r_cntrl & !empty) begin
+				#1;
+				compare_var = storage.pop_front();
+				if(data_out !== compare_var) $error("Time = %0t: Comparison Failed: expected wr_data = %h, rd_data = %h", $time, compare_var, data_out);
+				else $display("Time = %0t: Comparison Passed: wr_data = %h and rd_data = %h",$time, compare_var, data_out);
+			end
+		end
+		#100;
+
+		$finish;
+	end
+endmodule

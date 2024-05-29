@@ -1,0 +1,24 @@
+/*
+ * Clock Divider
+ * ----------------
+ * By: Rui van de Ven
+ * For: Group 33, ELEC5566M
+ * Date: 23/04/2024
+ *
+ * Description
+ * -----------
+ * This module divides a clock by 2 N times
+ */
+
+module NClockDivider #(
+    parameter N = 1  //default divider to divide once
+)(
+    // Declare input and output ports
+    input  			clk_in, //clock in
+    output 			clk_out //clock out
+);
+
+
+
+
+endmodule
