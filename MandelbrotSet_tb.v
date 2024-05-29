@@ -46,11 +46,11 @@ module MandelbrotSet_tb;
     initial begin
         // Initialize inputs
         reset = 1'b1;
-        #100; // Assert reset for a short period
+        #50; // Assert reset for a short period
         reset = 1'b0;
 
         // Monitor output for a specific duration to observe behavior
-        #60000; // Run the simulation for some time to cover several VGA frames
+        #60000000; // Run the simulation for some time to cover several VGA frames
 
         // End simulation
         $display("Simulation complete.");

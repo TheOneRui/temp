@@ -25,18 +25,21 @@ reg[31:0] escape_val;
 
     always @(posedge clk) begin
         if (rst) begin
-            a = 0;
-            b = 0;
-            counter = 0;
-            out_ready = 0;
-            ready_for_input = 1;
+            a <= 0;
+            b <= 0;
+            counter <= 0;
+            out_ready <= 0;
+            ready_for_input <= 1;
+				colour_data <= counter;
         end else if (start && ready_for_input) begin
-            a = real_part;
-            b = imaginary_part;
-            ready_for_input = 0;
+            a <= real_part;
+            b <= imaginary_part;
+            ready_for_input <= 0;
+				counter <= 0;
+				out_ready <= 0;
         end else if (!ready_for_input) begin
             // Perform the iteration calculation
-process_a_b();
+				process_a_b();
 
             a = a_next;
             b = b_next;

@@ -173,9 +173,9 @@ module VGADriver (
 
     task assign_colors;
         if (h_state == 8'd0 && v_state == 8'd0) begin
-            red_reg   <= red_in;
-            green_reg <= green_in;
-            blue_reg  <= blue_in;
+            red_reg   <= {red_in, 3'b111};
+            green_reg <= {green_in, 3'b111};
+            blue_reg  <= {blue_in, 3'b111};
         end else begin
             red_reg <= 0; green_reg <= 0; blue_reg <= 0;
         end
