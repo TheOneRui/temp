@@ -55,7 +55,7 @@ module MandelbrotSet(
 	//==========================================
 	//control wires
 	wire calc_rdy, calc_start, calc_out_rdy, calc_clk;
-	assign calc_clk = (clk & !complete); //may need to add cntrl/timing logic here
+	assign calc_clk = (clk_25Mhz & !complete); //may need to add cntrl/timing logic here
 	
 	//output wires
 	wire [31:0] calc_result;
@@ -71,7 +71,7 @@ module MandelbrotSet(
 
 	//control wire for address mapper
 	wire address_clk;
-	assign address_clk = (clk & calc_rdy & !complete);
+	assign address_clk = (clk_25Mhz & calc_rdy & !complete);
 	//==========================================
 	//address mapper Wires/Connectivity
 	 
@@ -113,7 +113,7 @@ module MandelbrotSet(
 	
 	 // Instantiate VGADriver                   
 	 VGADriver	driver( 
-		.clk								(clk),	// 25 MHz PLL
+		.clk								(clk_25Mhz),	// 25 MHz PLL
 		.reset							(reset),
 		
 		.red_in							({display_pointer[8:6], 2'b11}),
@@ -137,7 +137,7 @@ module MandelbrotSet(
 	 
 
 	DFlipFlopWithAclr delay(
-		.clock 		(clk),
+		.clock 		(clk_25Mhz),
 		.reset 		(reset),
 		.d				(calc_rdy), 
 		.q 			(calc_start)
@@ -150,7 +150,7 @@ module MandelbrotSet(
 	 
 	 
 	integer i, j, vert, hor;
-	always @(posedge clk) begin
+	always @(posedge clk_25Mhz) begin
 		if (reset) begin
 			complete <= 0;
 		
@@ -170,19 +170,16 @@ module MandelbrotSet(
 			if (hor == 0) begin
 				if(i < H_ACTIVE - 1) begin
 					i <=	i + 1;
-				end else if (j < V_ACTIVE - 1 && vert == 0) begin
+				end else if (j < V_ACTIVE - 1) begin
 					i <=	0;
 					j <=	j + 1;
-					vert <= 19;
-				end else if (vert != 0) begin
-					vert <= vert - 1;
 				end else begin
 					i <= 0;
 					j <= 0;
 				end
 				hor <= 19;
 			end else begin
-				hor <= hor - 1;
+				hor <= hor-1;
 			end
 			
 			display_pointer <=	display_buffer[i][j];
